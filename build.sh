@@ -17,8 +17,8 @@ ORIGINAL_NAME=$(<"${TEMP_FILE}" jq -r '.["Name"]')
 ORIGINAL_DESCRIPTION=$(<"${TEMP_FILE}" jq -r '.["Description"]')
 
 # check availability of current ami
-UEFI_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=${AMI_NAME_PREFIX}_UEFI" --query "Images[0].ImageId" --output text)
-TPM_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=${AMI_NAME_PREFIX}_TPM" --query "Images[0].ImageId" --output text)
+UEFI_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=UEFI_${AMI_NAME_PREFIX}" --query "Images[0].ImageId" --output text)
+TPM_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=TPM_${AMI_NAME_PREFIX}" --query "Images[0].ImageId" --output text)
 
 if test "${UEFI_AMI}" != "None" -a "${TPM_AMI}" != "None"; then
   exit 0
@@ -41,7 +41,7 @@ BLOCK_DEVICE_MAPPINGS_JSON=$(<"${TEMP_FILE}" jq --arg SNAPSHOT_ID "${SNAPSHOT}" 
 # Build AMI
 if test "${UEFI_AMI}" = "None"; then
   aws ec2 register-image \
-    --name "${ORIGINAL_NAME}_UEFI" \
+    --name "UEFI_${ORIGINAL_NAME}" \
     --architecture x86_64 \
     --description "${ORIGINAL_DESCRIPTION} UEFI" \
     --root-device-name /dev/sda1 \
@@ -54,7 +54,7 @@ fi
 
 if test "${TPM_AMI}" = "None"; then
   aws ec2 register-image \
-    --name "${ORIGINAL_NAME}_TPM" \
+    --name "TPM_${ORIGINAL_NAME}" \
     --architecture x86_64 \
     --description "${ORIGINAL_DESCRIPTION} TPM" \
     --root-device-name /dev/sda1 \
