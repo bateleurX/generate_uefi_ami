@@ -9,18 +9,18 @@ AMI_NAME_PREFIX="ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-"
 TEMP_FILE=$(mktemp)
 
 # get images
-aws ec2 describe-images --owners "${AMI_OWNER}" --query 'sort_by(Images, &CreationDate)[:1]' --filters "Name=name,Values=${AMI_NAME_PREFIX}*" > "${TEMP_FILE}"
+aws ec2 describe-images --owners "${AMI_OWNER}" --query 'sort_by(Images, &CreationDate)[-1]' --filters "Name=name,Values=${AMI_NAME_PREFIX}*" > "${TEMP_FILE}"
 
 # Get snapshot-id
-ORIGINAL_SNAPSHOT=$(<"${TEMP_FILE}" jq -r '.[0]["BlockDeviceMappings"][0]["Ebs"]["SnapshotId"]')
-ORIGINAL_NAME=$(<"${TEMP_FILE}" jq -r '.[0]["Name"]')
-ORIGINAL_DESCRIPTION=$(<"${TEMP_FILE}" jq -r '.[0]["Description"]')
+ORIGINAL_SNAPSHOT=$(<"${TEMP_FILE}" jq -r '.["BlockDeviceMappings"][0]["Ebs"]["SnapshotId"]')
+ORIGINAL_NAME=$(<"${TEMP_FILE}" jq -r '.["Name"]')
+ORIGINAL_DESCRIPTION=$(<"${TEMP_FILE}" jq -r '.["Description"]')
 
 # check availability of current ami
 UEFI_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=${AMI_NAME_PREFIX}_UEFI" --query "Images[0].ImageId" --output text)
 TPM_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=${AMI_NAME_PREFIX}_TPM" --query "Images[0].ImageId" --output text)
 
-if test -n "${UEFI_AMI}" -a -n "${TPM_AMI}"; then
+if test "${UEFI_AMI}" != "None" -a "${TPM_AMI}" != "None"; then
   exit 0
 fi
 
@@ -36,10 +36,10 @@ do
   fi
 done
 
-BLOCK_DEVICE_MAPPINGS_JSON=$(<"${TEMP_FILE}" jq --arg SNAPSHOT_ID "${SNAPSHOT}" -c '.[0]["BlockDeviceMappings"][0]["Ebs"]["SnapshotId"] = $SNAPSHOT_ID | del(.[0]["BlockDeviceMappings"][0]["Ebs"]["Encrypted"]) | .[0]["BlockDeviceMappings"]')
+BLOCK_DEVICE_MAPPINGS_JSON=$(<"${TEMP_FILE}" jq --arg SNAPSHOT_ID "${SNAPSHOT}" -c '.["BlockDeviceMappings"][0]["Ebs"]["SnapshotId"] = $SNAPSHOT_ID | del(.["BlockDeviceMappings"][0]["Ebs"]["Encrypted"]) | .["BlockDeviceMappings"]')
 
 # Build AMI
-if test -z "${UEFI_AMI}"; then
+if test "${UEFI_AMI}" = "None"; then
   aws ec2 register-image \
     --name "${ORIGINAL_NAME}_UEFI" \
     --architecture x86_64 \
@@ -52,7 +52,7 @@ if test -z "${UEFI_AMI}"; then
     --boot-mode uefi
 fi
 
-if test -z "${TPM_AMI}"; then
+if test "${TPM_AMI}" = "None"; then
   aws ec2 register-image \
     --name "${ORIGINAL_NAME}_TPM" \
     --architecture x86_64 \
