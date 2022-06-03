@@ -4,13 +4,13 @@
 BIOS AMIのスナップショットを流用して、UEFI AMIを作成するスクリプトです。
 
 ## 注意事項
-変換元AMIは下記条件が必要です。条件を満たさないAMIを変換すると、起動できないAMIになります。
+変換元AMIは下記条件が必要です。条件を満たさないAMIを変換しても起動しません。
 
 - ブートボリュームがGPT形式になっていること
 - ESP(EFI System Partition)が存在すること
 
 ### 確認方法
-利用したいAMIからEC2インスタンスを起動します。起動したら、`gdisk -l`コマンドでパーティション情報を確認します。Partition table scanが`GPT: present`になっており、Codeが`EF00`(ESP)になっているパーティションが存在する場合はUEFI化可能です。
+利用したいAMIからEC2インスタンスを起動します。起動したら、`gdisk -l`コマンドでパーティション情報を確認します。Partition table scanが`GPT: present`になっていればGPT形式のパーティション構成になっています。Codeが`EF00`(ESP)になっているパーティションが存在すればESPが作成されています。
 
 
 パーティションがGPT形式でESPパーティションが存在する(UEFI化できる)
@@ -80,5 +80,5 @@ Number  Start (sector)    End (sector)  Size       Code  Name
 - `AMI_NAME_PREFIX`にベースAMI名のうち、更新されても不変な部分を指定(デフォルト値は`ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-`で、これはUbuntu 22.04イメージに該当。この後の`yyyymmdd`でメジャーバージョン内のバージョンを管理している)
 
 修正したら、スクリプトを実行します。実行すると、下記2種類のイメージが作成されます。
-- 元のAMI名+_UEFI: ブートモードをUEFIに変更したAMI
-- 元のAMI名+_TPM: ブートモードをUEFIに変更し、TPMを有効化したAMI
+- UEFI_+元のAMI名: ブートモードをUEFIに変更したAMI
+- TPM_+元のAMI名: ブートモードをUEFIに変更し、TPMを有効化したAMI
