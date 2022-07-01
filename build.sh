@@ -17,8 +17,8 @@ ORIGINAL_NAME=$(<"${TEMP_FILE}" jq -r '.["Name"]')
 ORIGINAL_DESCRIPTION=$(<"${TEMP_FILE}" jq -r '.["Description"]')
 
 # check availability of current ami
-UEFI_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=UEFI_${AMI_NAME_PREFIX}" --query "Images[0].ImageId" --output text)
-TPM_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=TPM_${AMI_NAME_PREFIX}" --query "Images[0].ImageId" --output text)
+UEFI_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=UEFI_${AMI_NAME_PREFIX}*" --query "Images[0].ImageId" --output text)
+TPM_AMI=$(aws ec2 describe-images --owners self --filters "Name=name,Values=TPM_${AMI_NAME_PREFIX}*" --query "Images[0].ImageId" --output text)
 
 if test "${UEFI_AMI}" != "None" -a "${TPM_AMI}" != "None"; then
   exit 0
